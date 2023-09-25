@@ -1,6 +1,5 @@
 const fs = require("fs");
 const express = require("express");
-const { request } = require("http");
 const validateID = require("./helperFunctions");
 const app = express();
 
