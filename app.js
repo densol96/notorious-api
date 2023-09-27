@@ -14,7 +14,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/tours', toursRouter);
 app.use('/api/v1/users', usersRouter);
-app.use((re, res) => {
+app.use((req, res) => {
     res.status(404).json({
         status: 'fail',
         message: 'Page not found.',
