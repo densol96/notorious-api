@@ -1,6 +1,6 @@
 const express = require('express');
-const usersRouter = require('./routes/userRoutes');
-const toursRouter = require('./routes/tourRoutes');
+const usersRouter = require('./router/userRouter');
+const toursRouter = require('./router/tourRouter');
 
 const app = express();
 // MIDDLEWARE
@@ -14,5 +14,10 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/tours', toursRouter);
 app.use('/api/v1/users', usersRouter);
-
+app.use((re, res) => {
+    res.status(404).json({
+        status: 'fail',
+        message: 'Page not found.',
+    });
+});
 module.exports = app;
