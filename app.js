@@ -7,6 +7,12 @@ const app = express();
 // express.json() returns a middleware callback function that transforms request-content is JSON to JS Object
 app.use(express.json());
 
+/*
+Makes static files accessible as if 127.0.0.1:3000 === ..../public/
+F.e. 127.0.0.1:3000/img/logo-white.png
+*/
+app.use(express.static(`${__dirname}/public`));
+
 app.use((req, res, next) => {
     req.timeOfRequest = new Date().toISOString();
     next();

@@ -4,12 +4,22 @@ const tours = JSON.parse(
     fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
 );
 
-exports.validateID = (req, res, next, val = 0) => {
+exports.validateID = (req, res, next, val) => {
     const tourExists = tours.find((tour) => tour.id === +val);
     if (!tourExists) {
         return res.status(404).json({
             status: 'fail',
             message: 'No tour found with this ID..',
+        });
+    }
+    next();
+};
+
+exports.checkBodyPost = (req, res, next) => {
+    if (!(req.body.name && req.body.price)) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Wrong format of the form in the POST request body..',
         });
     }
     next();

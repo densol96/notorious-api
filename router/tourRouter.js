@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
     validateID,
+    checkBodyPost,
     getAllTours,
     getTour,
     addTour,
@@ -16,7 +17,7 @@ router.param('id', validateID);
 // prettier-ignore
 router.route(`/`)
     .get(getAllTours)
-    .post(addTour);
+    .post(checkBodyPost, addTour);
 
 // prettier-ignore
 router.route(`/:id`)
