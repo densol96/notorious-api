@@ -3,13 +3,30 @@
     "version": "1.0.0",
     "description": "Learning node, express and mongoDB",
     "main": "app.js",
-    "scripts": {
-        "start": "nodemon server.js"
-    },
-    "author": "Deniss SOlovjovs",
+    "author": "Deniss Solovjovs",
     "license": "ISC",
+    "scripts": {
+        "start:dev": "nodemon server.js",
+        "start:prod": "NODE_ENV=production nodemon server.js"
+    },
     "dependencies": {
-        "dotenv": "^16.3.1",
-        "express": "^4.18.2"
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "mongoose": "^6.12.0",
+        "morgan": "^1.10.0"
+    },
+    "devDependencies": {
+        "eslint": "^8.34.0",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-config-node": "^4.1.0",
+        "eslint-config-prettier": "^8.6.0",
+        "eslint-plugin-import": "^2.27.5",
+        "eslint-plugin-jsx-a11y": "^6.7.1",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "prettier": "^2.8.4"
+    },
+    "engines": {
+        "node": ">=10.0.0"
     }
 }
