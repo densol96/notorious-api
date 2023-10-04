@@ -12,54 +12,17 @@ const DB = process.env.DATABASE_REMOTE.replace(
 );
 
 mongoose
-    .connect(DB, {
-        useNewUrlParser: true,
-        // useCreateIndex: true,
-        // useFindAndModify: false,
-    })
+    .connect(DB)
     .then((connection) => {
         console.log(`Remote DB connection successful!`);
     })
     .catch((err) => {
-        console.log(`ERROR: `, err.message);
+        console.log(`💥ERROR: `, err.message);
     });
 
-// Create a schema
-const toursSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, 'A tour must have a name'],
-        unique: true,
-    },
-    rating: {
-        type: Number,
-        default: 4.5,
-    },
-    price: {
-        type: Number,
-        required: [true, 'A tour must have a price'],
-    },
-});
-
-const Tour = mongoose.model('Tour', toursSchema);
-
-const testTour = new Tour({
-    name: 'The Forest Hiker',
-    rating: 4.7,
-    price: 497,
-});
-
-testTour
-    .save()
-    .then((doc) => {
-        console.log('This document has been added to DB: ');
-        console.log(doc);
-    })
-    .catch((err) => {
-        console.log(`💥 ERROR: `, err);
-    });
-// Configure the server to listen on local host on PORT 3000
+// Configure the server to listen on localhost, port 3000 is coming from config.env
 const port = +process.env.PORT;
+
 app.listen(port, () => {
     console.log(`Server up on 127.0.0.1:${port}`);
 });
