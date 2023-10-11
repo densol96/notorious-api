@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
+const validator = require('validator');
 
 // Create a schema
 const tourSchema = new mongoose.Schema(
@@ -8,6 +10,15 @@ const tourSchema = new mongoose.Schema(
             required: [true, 'A tour must have a name'],
             unique: true,
             trim: true,
+            maxlength: [40, `A tour name must have 8-40 characters!`],
+            minlength: [8, `A tour name must have 8-40 characters!`],
+            // validate: {
+            //     validator: validator.isAlpha,
+            //     messsage: 'Name must only contain letters!',
+            // },
+        },
+        slug: {
+            type: String,
         },
         duration: {
             type: Number,
@@ -21,10 +32,16 @@ const tourSchema = new mongoose.Schema(
             type: 'String',
             required: [true, 'A tour must have a difficulty'],
             trim: true,
+            enum: {
+                values: ['easy', 'medium', 'difficult'],
+                message: 'Difficulty is either: easy, medium, difficult',
+            },
         },
         ratingsAverage: {
             type: Number,
             default: 4.5,
+            min: [1, `Rating cannot be lower than 1.0!`],
+            max: [5, `Rating cannot be higher than 5.0!`],
         },
         ratingsQuantity: {
             type: Number,
@@ -34,7 +51,19 @@ const tourSchema = new mongoose.Schema(
             type: Number,
             required: [true, 'A tour must have a price'],
         },
-        priceDiscount: Number,
+        priceDiscount: {
+            type: Number,
+            validate: {
+                validator: function (val) {
+                    // this = document
+                    // val = priceDiscount
+                    return val < this.price;
+                },
+                // {VALUE} comes from mongoose
+                message:
+                    'Discount price ({VALUE}) should be below regular price!',
+            },
+        },
         summary: {
             type: String,
             trim: true, //trims the input string
@@ -55,6 +84,10 @@ const tourSchema = new mongoose.Schema(
             select: false, // will not display to the user
         },
         startDates: [Date],
+        secretTour: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         toJSON: {
@@ -73,6 +106,59 @@ tourSchema.set('collection', 'tours');
 tourSchema.virtual(`durationWeeks`).get(function () {
     // this in this context will refer to the same document therefore gotta use function expression
     return this.duration / 7;
+});
+
+// DOCUMENT MIDDLEWARE: runs before .save() and .create() .insertMany
+tourSchema.pre(`save`, function (next) {
+    // this = dicument that being saved
+    // use slugify library to create a slug, f.e. "My name" ---> "my-name"
+    this.slug = slugify(this.name, { lower: true });
+    // Ensure that difficulty is in lower case
+    const inputDifficulty = this.difficulty;
+    const loweredDifficulty = inputDifficulty.toLowerCase();
+    this.difficulty = loweredDifficulty;
+    console.log(`This is before creating the document?`);
+    next();
+});
+
+// post middleware runs after
+tourSchema.post(`save`, function (doc, next) {
+    // can't use this here, but have access to doc object
+    console.log(`Document has been created!`);
+    console.log(doc);
+    next();
+});
+
+// QUERY MIDDLEWARE - works pre-/post queries f.e. find, findOne etc.
+tourSchema.pre(`find`, function (next) {
+    // this refers to the current query
+    this.queryStartTime = Date.now();
+    next();
+});
+
+tourSchema.post(`find`, function (docs, next) {
+    const time = Date.now() - this.queryStartTime;
+    console.log(`Query took ${time} ms.`);
+    next();
+});
+
+// AGGREGATION MIDDLEWARE
+tourSchema.pre(`aggregate`, function (next) {
+    // this = Aggregate Object
+    // f.e. -->
+    //Aggregate {
+    // _pipeline: [
+    //     { $unwind: '$startDates' },
+    //     { $match: [Object] },
+    //     { $group: [Object] },
+    //     { $addFields: [Object] },
+    //     { $project: [Object] },
+    //     { $sort: [Object] },
+    //     { $limit: 12 },
+    // ],
+
+    this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+    next();
 });
 
 // Model to be used as blueprint for Tours coming to DB

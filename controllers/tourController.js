@@ -21,6 +21,7 @@ exports.postTour = async (req, res) => {
     // await newTour.save();
 
     // 2. OPTION
+    req.body.difficulty = req.body.difficulty.toLowerCase();
     try {
         const newTour = await Tour.create(req.body);
         res.status(200).json({
@@ -29,8 +30,8 @@ exports.postTour = async (req, res) => {
             tour: newTour,
         });
     } catch (err) {
-        console.log('💥 ERROR in createTour --> ');
-        // console.log(err);
+        console.log('💥 ERROR in postTour --> ');
+        console.log(err);
         res.status(400).json({
             status: 'fail',
             message: err,
