@@ -113,11 +113,6 @@ tourSchema.pre(`save`, function (next) {
     // this = dicument that being saved
     // use slugify library to create a slug, f.e. "My name" ---> "my-name"
     this.slug = slugify(this.name, { lower: true });
-    // Ensure that difficulty is in lower case
-    const inputDifficulty = this.difficulty;
-    const loweredDifficulty = inputDifficulty.toLowerCase();
-    this.difficulty = loweredDifficulty;
-    console.log(`This is before creating the document?`);
     next();
 });
 
