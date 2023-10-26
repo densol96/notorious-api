@@ -6,9 +6,12 @@ const {
     updateUser,
     deleteUser,
 } = require('../controllers/userController');
+const { signUp, logIn } = require('./../controllers/authController');
 
 const router = express.Router();
 
+router.post(`/signup`, signUp);
+router.post(`/login`, logIn);
 // prettier-ignore
 router.route('/')
     .get(getAllUsers)
