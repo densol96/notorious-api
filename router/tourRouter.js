@@ -11,13 +11,16 @@ const {
     getTourStats,
     getMonthlyPlan,
 } = require(`${__dirname}/../controllers/tourController.js`);
-const { protect } = require(`${__dirname}/../controllers/authController.js`);
+const {
+    protect,
+    restrictTo,
+} = require(`${__dirname}/../controllers/authController.js`);
 // This middleware will be applied first to the request matching the .route(`/:id`)
 // router.param('id', validateID);
 
 // prettier-ignore
 router.route(`/`)
-    .get(protect, getAllTours)
+    .get(protect, restrictTo('admin'), getAllTours)
     .post(postTour);
 
 // prettier-ignore
