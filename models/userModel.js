@@ -1,6 +1,7 @@
 const mongoose = require(`mongoose`);
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const crypto = require(`crypto`);
 
 // name, email, photo, password, passwordCOnfirm
 const userSchema = new mongoose.Schema({
@@ -50,6 +51,8 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'guide', 'lead-guide', 'admin'],
         default: 'user',
     },
+    paswordResetToken: String,
+    paswordResetExpiry: Date,
 });
 
 userSchema.set('collection', 'users');
@@ -81,6 +84,21 @@ userSchema.methods.changedPasswordAfter = function (timestampJWT) {
         return passwordChangedTimestampInMS > timestampJWT;
     }
     return false;
+};
+
+userSchema.methods.createPasswordResetToken = async function () {
+    // will act as a reset password
+    const resetToken = crypto.randomBytes(32).toString(`hex`);
+    // this will be only valid for a short time and then the supposed user will change the password => we can use a weaker alghoritmn
+    const encryptedResetToken = await crypto
+        .createHash(`sha256`)
+        .update(resetToken)
+        .digest(`hex`);
+    // remember that this referes to the document object that is calling this instance method
+    this.passwordResetToken = encryptedResetToken;
+    // make it valid for 10 minutes
+    this.passwordResetExpiry = Date.now() + 10 * 60 * 1000;
+    return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);
