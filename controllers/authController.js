@@ -18,7 +18,7 @@ exports.signUp = catchAsyncError(async (req, res) => {
         email: req.body.email,
         password: req.body.password,
         passwordConfirm: req.body.passwordConfirm,
-        passwordChangedAt: req.body.passwordChangedAt,
+        // passwordChangedAt: req.body.passwordChangedAt,
         role: req.body.role,
     });
 
@@ -41,7 +41,7 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
     // Check if user exists && password is correct
     const user = await User.findOne({ email: email }).select('+password'); // Cause in the model for password select is false => therefore need to select separately with explicit +
     if (!user || !(await user.correctPassword(password, user.password))) {
-        next(new AppError(`Incorrect email or password`, 401));
+        throw new AppError(`Incorrect email or password`, 401);
     }
     // If everything okey, send token to client
     const token = signToken(user._id);
@@ -120,12 +120,6 @@ exports.forgotPassword = catchAsyncError(async (req, res, next) => {
 
     const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\n
     If you didn't forget your password, please ignore this email!`;
-
-    await sendEmail({
-        email,
-        subject: 'Your password reset token (valid for 10 min)',
-        message,
-    });
 
     try {
         await sendEmail({
