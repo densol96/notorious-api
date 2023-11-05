@@ -18,7 +18,7 @@ const router = express.Router();
 router.post(`/signup`, signUp);
 router.post(`/login`, logIn);
 router.post(`/forgot-password`, forgotPassword);
-router.post(`/reset-password/:token`, resetPassword);
+router.patch(`/reset-password/:token`, resetPassword);
 // prettier-ignore
 router.route('/')
     .get(getAllUsers)

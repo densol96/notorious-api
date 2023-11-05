@@ -47,24 +47,34 @@ const userSchema = new mongoose.Schema({
         type: Date,
     },
     role: {
-        type: 'String',
+        type: String,
         enum: ['user', 'guide', 'lead-guide', 'admin'],
         default: 'user',
     },
-    paswordResetToken: String,
-    paswordResetExpiry: Date,
+    passwordResetToken: String,
+    passwordResetExpiry: Date,
 });
 
 userSchema.set('collection', 'users');
 
+// On creating a new document
 userSchema.pre('save', async function (next) {
     // Only run this function if password was actually modified
     if (!this.isModified('password')) return next();
+
     // Hash the password with CPU cost of 12
     this.password = await bcrypt.hash(this.password, 12);
+
     // will work cause type: String in Schema is used for user input validation
     this.passwordConfirm = undefined;
+    next();
+});
 
+// On resetting the password
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password') || this.isNew) return next();
+    // Just in case token gets issued after the password changed at
+    this.passwordChangedAt = Date.now() - 1000;
     next();
 });
 
@@ -90,7 +100,7 @@ userSchema.methods.createPasswordResetToken = async function () {
     // will act as a reset password
     const resetToken = crypto.randomBytes(32).toString(`hex`);
     // this will be only valid for a short time and then the supposed user will change the password => we can use a weaker alghoritmn
-    const encryptedResetToken = await crypto
+    const encryptedResetToken = crypto
         .createHash(`sha256`)
         .update(resetToken)
         .digest(`hex`);

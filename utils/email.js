@@ -19,7 +19,7 @@ const sendEmail = async (options) => {
             pass: process.env.EMAIL_PASSWORD,
         },
     };
-    console.log(transporterParameters);
+
     const transporter = nodemailer.createTransport(transporterParameters);
 
     // 2) Define the email options
