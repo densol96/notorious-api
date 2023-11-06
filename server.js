@@ -7,7 +7,7 @@ process.on('uncaughtException', (err) => {
 // This only needs to happen once and then process.env will be available in other files of the app as well.
 const dotenv = require('dotenv');
 dotenv.config({ path: `${__dirname}/config.env` });
-const app = require('./app');
+const app = require('./app.js');
 const mongoose = require('mongoose');
 
 // Configure mongoDB

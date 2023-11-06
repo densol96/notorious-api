@@ -20,7 +20,7 @@ const {
 
 // prettier-ignore
 router.route(`/`)
-    .get(protect, restrictTo('admin'), getAllTours)
+    .get(protect, restrictTo('admin', "user"), getAllTours)
     .post(postTour);
 
 // prettier-ignore

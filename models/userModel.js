@@ -53,6 +53,23 @@ const userSchema = new mongoose.Schema({
     },
     passwordResetToken: String,
     passwordResetExpiry: Date,
+    active: {
+        type: Boolean,
+        default: true,
+        select: false,
+    },
+    loginAttempts: {
+        type: Number,
+        default: 0,
+    },
+    tempBan: {
+        type: Date,
+    },
+    emailConfirmationToken: String,
+    emailConfirmed: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 userSchema.set('collection', 'users');
@@ -78,6 +95,12 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
+userSchema.pre(/^find/, function (next) {
+    // query middleware --- this = current query
+    this.find({ active: { $ne: false } });
+    next();
+});
+
 // Is an instance method => will be available on any document
 userSchema.methods.correctPassword = async function (
     candidatePassword,
@@ -96,19 +119,40 @@ userSchema.methods.changedPasswordAfter = function (timestampJWT) {
     return false;
 };
 
+// Will use this function to create a random token using weaker encryption, such as SHA256. Make sure to .call .bind this function to make this a current object used.
+// Examples for usage ---> password reset token, email confirmation, 2-
+const createRandomToken = function (encryptedField) {
+    const randomToken = crypto.randomBytes(32).toString(`hex`);
+    const encryptedRandomToken = crypto
+        .createHash(`sha256`)
+        .update(randomToken)
+        .digest(`hex`);
+    this[encryptedField] = encryptedRandomToken;
+    return randomToken;
+};
+
 userSchema.methods.createPasswordResetToken = async function () {
     // will act as a reset password
-    const resetToken = crypto.randomBytes(32).toString(`hex`);
     // this will be only valid for a short time and then the supposed user will change the password => we can use a weaker alghoritmn
-    const encryptedResetToken = crypto
-        .createHash(`sha256`)
-        .update(resetToken)
-        .digest(`hex`);
-    // remember that this referes to the document object that is calling this instance method
-    this.passwordResetToken = encryptedResetToken;
+    const resetToken = createRandomToken.call(this, 'passwordResetToken');
     // make it valid for 10 minutes
     this.passwordResetExpiry = Date.now() + 10 * 60 * 1000;
     return resetToken;
+};
+
+userSchema.methods.createEmailConfirmationToken = async function () {
+    const emailConfirmationToken = createRandomToken.call(
+        this,
+        'emailConfirmationToken'
+    );
+    return emailConfirmationToken;
+};
+
+userSchema.methods.accountLocked = function () {
+    if (this.tempBan) {
+        return Date.now() < this.tempBan;
+    }
+    return false;
 };
 
 const User = mongoose.model('User', userSchema);

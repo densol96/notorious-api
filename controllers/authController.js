@@ -6,6 +6,7 @@ const catchAsyncError = require(`./../utils/catchAssyncErr`);
 const AppError = require('../utils/appError');
 const sendEmail = require('../utils/email');
 const crypto = require(`crypto`);
+const { use } = require('../router/userRouter');
 
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -13,23 +14,103 @@ const signToken = (id) => {
     });
 };
 
+const createSendToken = (user, statusCode, res, message) => {
+    const token = signToken(user._id);
+
+    const cookieOptions = {
+        expires: new Date(
+            Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+        ),
+        httpOnly: true, // browser unable to modify/access the cookie, only auto store and send with every request
+    };
+    if (process.env.NODE_ENV.trim() === 'production') {
+        cookieOptions.secure = true; // will be sent on HTTPS connection only
+    }
+    res.cookie(`jwt`, token, cookieOptions);
+
+    res.status(statusCode).json({
+        status: 'success',
+        token,
+        data: {
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            },
+        },
+        message,
+    });
+};
+
 exports.signUp = catchAsyncError(async (req, res) => {
-    const newUser = await User.create({
+    // create the User
+    const user = await User.create({
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
         passwordConfirm: req.body.passwordConfirm,
-        // passwordChangedAt: req.body.passwordChangedAt,
-        role: req.body.role,
     });
 
-    const token = signToken(newUser._id);
+    // User.emailConfirmed is false by default. Ask the user to confirm the email before they can get the JWT
+
+    const emailConfirmationToken = await user.createEmailConfirmationToken();
+    await user.save({ validateBeforeSave: false });
+
+    const emailConfirmURL = `${req.protocol}://${req.get(
+        'host'
+    )}/api/v1/users/email-confirmation/${emailConfirmationToken}`;
+
+    const message = `Welcome to our app, ${user.name}! In order to confirm your email and activate ypur account, please press the link: ${emailConfirmURL} (should be a GET request for this route)`;
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: 'NATOURS API: Please, confirm your email!',
+            message,
+        });
+    } catch (err) {
+        await User.findOneAndDelete({ email: user.email });
+        throw new AppError(
+            'Registration is currently unavailable! Please get in touch with the administrator or try again later!',
+            500
+        );
+    }
 
     res.status(201).json({
         status: 'success',
-        token,
+        message:
+            'Account has been created, but you need to confirm your email first! Please, check your inbox!',
+    });
+});
+
+exports.confirmEmail = catchAsyncError(async (req, res, next) => {
+    const hashedConfirmToken = crypto
+        .createHash(`sha256`)
+        .update(req.params.token)
+        .digest(`hex`);
+
+    const user = await User.findOne({
+        emailConfirmationToken: hashedConfirmToken,
+    });
+
+    user.emailConfirmed = true;
+    user.emailConfirmationToken = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    const message = `Your email has been confirmed! You can now log in at ${
+        req.protocol
+    }://${req.get('host')}/api/v1/users/login`;
+
+    res.status(201).json({
+        status: 'success',
+        message,
         data: {
-            user: newUser,
+            user: {
+                email: user.email,
+                name: user.name,
+                emailConfirmed: user.emailConfirmed,
+            },
         },
     });
 });
@@ -41,15 +122,47 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
     }
     // Check if user exists && password is correct
     const user = await User.findOne({ email: email }).select('+password'); // Cause in the model for password select is false => therefore need to select separately with explicit +
-    if (!user || !(await user.correctPassword(password, user.password))) {
-        throw new AppError(`Incorrect email or password`, 401);
+    if (!user) {
+        throw new AppError(`No user with such email!`, 401);
     }
+
+    if (!user.emailConfirmed) {
+        throw new AppError(
+            'Email has not been confirmed yet! Please check your inbox!',
+            403
+        );
+    }
+
+    if (user.accountLocked()) {
+        throw new AppError(
+            'Too many wrong attempts to log in! Your account has been locked! Try again later!',
+            403
+        );
+    }
+
+    if (!(await user.correctPassword(password, user.password))) {
+        user.loginAttempts += 1;
+        const updates = {
+            loginAttempts: user.loginAttempts,
+        };
+        if (user.loginAttempts >= +process.env.WRONG_PASSWORD_LIMIT) {
+            updates.tempBan = new Date(
+                Date.now() + +process.env.WRONG_PASSWORD_BAN_MIN * 60 * 1000
+            );
+            updates.loginAttempts = 0;
+        }
+        await User.findOneAndUpdate({ email }, updates);
+
+        throw new AppError(
+            `Incorrect password! You have ${
+                +process.env.WRONG_PASSWORD_LIMIT - user.loginAttempts
+            } attempts left! `,
+            401
+        );
+    }
+
     // If everything okey, send token to client
-    const token = signToken(user._id);
-    res.status(201).json({
-        status: 'success',
-        token,
-    });
+    createSendToken(user, 201, res);
 });
 
 exports.protect = catchAsyncError(async (req, res, next) => {
@@ -168,17 +281,21 @@ exports.resetPassword = catchAsyncError(async (req, res, next) => {
     user.passwordResetExpiry = undefined;
     await user.save();
     // 4) Log the user in, send JWT
-    const token = signToken(user._id);
-
-    res.status(200).json({
-        status: 'success',
-        token,
-    });
+    createSendToken(user, 201, res);
 });
 
 exports.updatePassword = catchAsyncError(async (req, res, next) => {
     // 1) Get user from the collection
+    const user = await User.findOne({ _id: req.user.id }).select('+password');
+
+    if (!user) throw new AppError(`No user with this email found!`, 404);
     // 2) Check is the old password is correct
+    if (!(await user.correctPassword(req.body.oldPassword, user.password)))
+        throw new AppError(`Wrong password!`, 400);
     // 3) If so, update the password
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    await user.save();
     // 4) Log user in, send JWT
+    createSendToken(user, 201, res);
 });
