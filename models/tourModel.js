@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+const User = require(`userModel.js`);
 
 // Create a schema
 const tourSchema = new mongoose.Schema(
@@ -87,6 +88,37 @@ const tourSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        startLocation: {
+            // GeoJSON
+            type: {
+                type: String,
+                default: 'Point',
+                enum: ['Point'],
+                message: 'Type can only be a point!',
+            },
+            // Array of numbers
+            // norm lat(h), long(v) BUT here long, lat for GeoJSON
+            coordinates: [Number],
+
+            // CAN ADD OTHER FIELDS TO GeoJSON
+            address: String,
+            description: String,
+        },
+        locations: [
+            {
+                type: {
+                    type: String,
+                    default: 'Point',
+                    enum: ['Point'],
+                    message: 'Type can only be a point!',
+                },
+                coordinates: [Number],
+                address: String,
+                description: String,
+                day: Number,
+            },
+        ],
+        guides: [{ type: mongoose.Schema.objectId, ref: User }],
     },
     {
         toJSON: {
@@ -114,6 +146,14 @@ tourSchema.pre(`save`, function (next) {
     this.slug = slugify(this.name, { lower: true });
     next();
 });
+
+// tourSchema.pre(`save`, async function (next) {
+//     const guides = this.guides.map((id) => {
+//         User.findOneById(id);
+//     });
+//     this.guides = await Promise.all(guidesPromises);
+//     next();
+// });
 
 // post middleware runs after
 tourSchema.post(`save`, function (doc, next) {
