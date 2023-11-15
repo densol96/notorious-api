@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
-const User = require(`userModel.js`);
 
 // Create a schema
 const tourSchema = new mongoose.Schema(
@@ -89,7 +88,7 @@ const tourSchema = new mongoose.Schema(
             default: false,
         },
         startLocation: {
-            // GeoJSON
+            // GeoJSON (must have at least type and coordinates)
             type: {
                 type: String,
                 default: 'Point',
@@ -118,7 +117,13 @@ const tourSchema = new mongoose.Schema(
                 day: Number,
             },
         ],
-        guides: [{ type: mongoose.Schema.objectId, ref: User }],
+        // guides: Array,
+        guides: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User',
+            },
+        ],
     },
     {
         toJSON: {
@@ -147,11 +152,12 @@ tourSchema.pre(`save`, function (next) {
     next();
 });
 
+// USED FOR EMBEDDING
 // tourSchema.pre(`save`, async function (next) {
 //     const guides = this.guides.map((id) => {
-//         User.findOneById(id);
+//         return User.findById(id);
 //     });
-//     this.guides = await Promise.all(guidesPromises);
+//     this.guides = await Promise.all(guides);
 //     next();
 // });
 
@@ -167,6 +173,14 @@ tourSchema.post(`save`, function (doc, next) {
 tourSchema.pre(`find`, function (next) {
     // this refers to the current query
     this.queryStartTime = Date.now();
+    next();
+});
+
+tourSchema.pre(`find`, function (next) {
+    this.populate({
+        path: 'guides',
+        select: '-__v -passwordChangedAt',
+    });
     next();
 });
 

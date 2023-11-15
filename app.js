@@ -1,5 +1,6 @@
 const usersRouter = require('./router/userRouter.js');
 const toursRouter = require('./router/tourRouter.js');
+const reviewsRouter = require('./router/reviewRouter.js');
 
 const AppError = require(`./utils/appError.js`);
 const globalErrorHandler = require('./controllers/errorController.js');
@@ -83,6 +84,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/tours', toursRouter);
 app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/reviews', reviewsRouter);
 
 app.all('*', (req, res, next) => {
     const err = new AppError(
