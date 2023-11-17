@@ -1,5 +1,6 @@
 const express = require('express');
-const router = express.Router();
+// mergeParams = if reviewsRouter was mounted on some other one, it will also get access to that router's params (:id etc)
+const router = express.Router({ mergeParams: true });
 
 const {
     getAllReviews,

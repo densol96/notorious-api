@@ -167,11 +167,11 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
 
 exports.protect = catchAsyncError(async (req, res, next) => {
     // 1) Getting token and check if it's there
+
     let token;
     if (req.headers?.authorization?.startsWith('Bearer')) {
         token = req.headers.authorization.split(` `)[1];
     }
-
     if (!token) {
         throw new AppError(
             'You are not logged in! Please log in to get access!',
@@ -196,6 +196,7 @@ exports.protect = catchAsyncError(async (req, res, next) => {
             401
         );
     }
+    console.log(user);
     // Grant access to protected route
     req.user = user;
     next();

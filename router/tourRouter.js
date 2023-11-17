@@ -11,10 +11,13 @@ const {
     getTourStats,
     getMonthlyPlan,
 } = require(`${__dirname}/../controllers/tourController.js`);
+
 const {
     protect,
     restrictTo,
 } = require(`${__dirname}/../controllers/authController.js`);
+
+const reviewsRouter = require('./reviewRouter.js');
 // This middleware will be applied first to the request matching the .route(`/:id`)
 // router.param('id', validateID);
 
@@ -40,5 +43,8 @@ router.route(`/:id`)
     .get(getTourByID)
     .patch(updateTour)
     .delete(deleteTour);
+
+// NESTED ROUTE simillar to app.use("url", router)
+router.use('/:id/reviews', reviewsRouter);
 
 module.exports = router;

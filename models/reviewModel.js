@@ -36,10 +36,11 @@ const reviewSchema = mongoose.Schema(
 
 reviewSchema.pre('find', function (next) {
     // prettier-ignore
-    this.populate({
-        path: 'tour',
-        select: 'name slug'
-    })
+    this
+    // .populate({
+    //     path: 'tour',
+    //     select: 'name slug'
+    // })
     .populate({
         path: 'user',
         select: 'name email'

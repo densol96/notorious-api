@@ -77,7 +77,12 @@ exports.getAllTours = catchAsyncError(async (req, res) => {
 
 exports.getTourByID = catchAsyncError(async (req, res) => {
     // Tour.findById(req.params.id)
-    const tour = await Tour.findOne({ _id: req.params.id });
+    const tour = await Tour.findOne({ _id: req.params.id })
+        .populate('reviews')
+        .populate({
+            path: 'guides',
+            select: 'name email',
+        });
     if (!tour) {
         throw new AppError(
             `No document with such ID of ${req.params.id} found!`,
