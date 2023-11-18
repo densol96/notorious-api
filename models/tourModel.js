@@ -169,12 +169,12 @@ tourSchema.pre(`save`, function (next) {
 // });
 
 // post middleware runs after
-tourSchema.post(`save`, function (doc, next) {
-    // can't use this here, but have access to doc object
-    console.log(`Document has been created!`);
-    console.log(doc);
-    next();
-});
+// tourSchema.post(`save`, function (doc, next) {
+//     // can't use this here, but have access to doc object
+//     console.log(`Document has been created!`);
+//     console.log(doc);
+//     next();
+// });
 
 // QUERY MIDDLEWARE - works pre-/post queries f.e. find, findOne etc.
 tourSchema.pre(`find`, function (next) {
@@ -183,13 +183,13 @@ tourSchema.pre(`find`, function (next) {
     next();
 });
 
-tourSchema.pre(`find`, function (next) {
-    this.populate({
-        path: 'guides',
-        select: '-__v -passwordChangedAt',
-    });
-    next();
-});
+// tourSchema.pre(`find`, function (next) {
+//     this.populate({
+//         path: 'guides',
+//         select: '-__v -passwordChangedAt',
+//     });
+//     next();
+// });
 
 tourSchema.post(`find`, function (docs, next) {
     const time = Date.now() - this.queryStartTime;

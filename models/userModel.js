@@ -98,6 +98,7 @@ userSchema.pre('save', async function (next) {
 userSchema.pre(/^find/, function (next) {
     // query middleware --- this = current query
     this.find({ active: { $ne: false } });
+    this.select('-__v');
     next();
 });
 

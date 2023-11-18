@@ -121,11 +121,15 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
         throw new AppError('Please provide email and password', 400);
     }
     // Check if user exists && password is correct
-    const user = await User.findOne({ email: email }).select('+password'); // Cause in the model for password select is false => therefore need to select separately with explicit +
+    const user = await User.findOne({ email: email }).select(
+        '+password emailConfirmed'
+    ); // Cause in the model for password select is false => therefore need to select separately with explicit +
     if (!user) {
         throw new AppError(`No user with such email!`, 401);
     }
 
+    console.log('I am here!');
+    console.log(user);
     if (!user.emailConfirmed) {
         throw new AppError(
             'Email has not been confirmed yet! Please check your inbox!',
@@ -196,7 +200,6 @@ exports.protect = catchAsyncError(async (req, res, next) => {
             401
         );
     }
-    console.log(user);
     // Grant access to protected route
     req.user = user;
     next();

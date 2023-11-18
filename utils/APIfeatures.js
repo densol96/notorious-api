@@ -1,4 +1,5 @@
 class APIFeatures {
+    // new APIFeature(Model.find(), req.queries)
     constructor(queryInBuild, queriesFromRequest) {
         this.queryInBuild = queryInBuild;
         this.queriesFromRequest = queriesFromRequest;

@@ -1,6 +1,7 @@
 const User = require(`./../models/userModel`);
 const catchAsyncError = require(`./../utils/catchAssyncErr`);
 const AppError = require('../utils/appError');
+const handlerFactory = require('./handlerFactory.js');
 
 const filterObj = (obj, ...allowedFields) => {
     const filtered = {};
@@ -54,6 +55,7 @@ exports.updateMe = catchAsyncError(async (req, res, next) => {
     });
 });
 
+// De-activate
 exports.deleteMe = catchAsyncError(async (req, res, next) => {
     await User.findOneAndUpdate({ _id: req.user.id }, { active: false });
 
@@ -63,3 +65,16 @@ exports.deleteMe = catchAsyncError(async (req, res, next) => {
         message: 'Your account has been deleted successfully!',
     });
 });
+
+exports.getMe = (req, res, next) => {
+    req.params.id = req.user._id;
+    next();
+};
+
+// Real delete for users with permission of "admin"
+exports.deleteUser = handlerFactory.deleteDocument(User);
+
+// Not for updating the password
+exports.updateUser = handlerFactory.updateDocument(User);
+exports.getUser = handlerFactory.getDocument(User);
+exports.getAllUserS = handlerFactory.getAllDocuments(User);
