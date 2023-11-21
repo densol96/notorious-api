@@ -1,3 +1,4 @@
+const path = require('path');
 const usersRouter = require('./router/userRouter.js');
 const toursRouter = require('./router/tourRouter.js');
 const reviewsRouter = require('./router/reviewRouter.js');
@@ -13,6 +14,9 @@ const helmet = require('helmet');
 const mongoSanitize = require(`express-mongo-sanitize`);
 const xss = require('xss-clean');
 const hpp = require('hpp');
+
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
 ////////// GLOBAL MIDDLEWARES   ///////////////
 
 // MORGAN
@@ -80,6 +84,14 @@ app.use(express.static(`${__dirname}/public`));
 app.use((req, res, next) => {
     req.timeOfRequest = new Date().toISOString();
     next();
+});
+
+// ROUTES
+app.use('/', (req, res) => {
+    res.status(200).render('base', {
+        tour: 'The Forest Hiker',
+        user: 'Jonas',
+    });
 });
 
 app.use('/api/v1/tours', toursRouter);

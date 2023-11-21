@@ -219,3 +219,77 @@ exports.getMonthlyPlan = catchAsyncError(async (req, res) => {
         },
     });
 });
+
+// ('/tours-within/:distance/center/:latlng/unit/:unit');
+exports.getToursWithin = catchAsyncError(async (req, res, next) => {
+    const { distance, latlng, unit } = req.params;
+    const [lat, lng] = latlng.split(',');
+
+    if (!lat || !lng) {
+        next(
+            new AppError(
+                'Please, provide latitude and longitude in the format lat,lng.',
+                400
+            )
+        );
+    }
+
+    // need to calculate radiants = distance / earth radius
+    const radius = unit === 'mi' ? +distance / 3963.2 : +distance / 6378.1;
+    const tours = await Tour.find({
+        // [lng, lat],
+        startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } },
+    });
+    // ! In order to make GeiJSON work we need to use idnexing on the field where the GeoJSON data is stored
+    res.status(201).json({
+        status: 'success',
+        results: tours.length,
+        data: {
+            tours,
+        },
+    });
+});
+
+exports.getDistances = catchAsyncError(async (req, res, next) => {
+    const { latlng, unit } = req.params;
+    const [lat, lng] = latlng.split(',');
+
+    if (!lat || !lng) {
+        next(
+            new AppError(
+                'Please, provide latitude and longitude in the format lat,lng.',
+                400
+            )
+        );
+    }
+
+    const multiplier = unit === 'km' ? 0.001 : 0.000621371;
+
+    const distances = await Tour.aggregate([
+        {
+            // For goespecial there is only one stage of aggregation
+            $geoNear: {
+                near: {
+                    type: 'Point',
+                    coordinates: [+lng, +lat],
+                },
+                distanceField: 'distance',
+                distanceMultiplier: 0.001,
+            },
+        },
+        {
+            $project: {
+                distance: 1,
+                name: 1,
+            },
+        },
+    ]);
+
+    res.status(201).json({
+        status: 'success',
+        result: distances.length,
+        data: {
+            distances,
+        },
+    });
+});

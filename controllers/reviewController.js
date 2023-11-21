@@ -1,7 +1,7 @@
 const Review = require('./../models/reviewModel.js');
 const handlerFactory = require('./handlerFactory.js');
-
-// const catchAsyncError = require('./../utils/catchAssyncErr.js');
+const catchAsyncError = require('./../utils/catchAssyncErr.js');
+const AppError = require('../utils/appError.js');
 
 exports.setUserTour = (req, res, next) => {
     if (!req.body.tour) {
@@ -14,6 +14,19 @@ exports.setUserTour = (req, res, next) => {
     }
     next();
 };
+
+exports.protectNotMyReviews = catchAsyncError(async (req, res, next) => {
+    const reviewForChange = await Review.findById(req.params.id);
+    if (!reviewForChange)
+        throw new AppError('The review with such id does not exist!', 404);
+    // when comparing 2 i Objects need to use this method
+    if (req.user.role != 'admin' && !reviewForChange.user.equals(req.user._id))
+        throw new AppError(
+            "You have no permissions to edit other users' reviews!",
+            403
+        );
+    next();
+});
 
 exports.postReview = handlerFactory.createDocument(Review);
 // exports.postReview = catchAsyncError(async (req, res) => {

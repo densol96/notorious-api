@@ -9,20 +9,23 @@ const {
     updateReview,
     setUserTour,
     getReview,
+    protectNotMyReviews,
 } = require(`./../controllers/reviewController.js`);
 
 const { protect, restrictTo } = require('./../controllers/authController.js');
 
 // prettier-ignore
+router.use(protect);
 router
     .route('/')
     .get(getAllReviews)
-    .post(protect, restrictTo('user'), setUserTour, postReview);
+    .post(restrictTo('user'), setUserTour, postReview);
 
 // prettier-ignore
-router.route('/:id')
+router
+    .route('/:id')
     .get(getReview)
-    .patch(updateReview)
-    .delete(deleteReview);
+    .patch(restrictTo('user', 'admin'), protectNotMyReviews, updateReview)
+    .delete(restrictTo('user', 'admin'), protectNotMyReviews, deleteReview);
 
 module.exports = router;

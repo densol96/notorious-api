@@ -28,19 +28,24 @@ router.get('/email-confirmation/:token', confirmEmail);
 router.post(`/login`, logIn);
 router.post(`/forgot-password`, forgotPassword);
 router.patch(`/reset-password/:token`, resetPassword);
-router.patch(`/change-my-password`, protect, updatePassword);
-router.patch(`/update-me`, protect, updateMe);
-router.delete(`/delete-me`, protect, deleteMe);
-router.get(`/get-me`, protect, getMe, getUser);
+
+// From this point on, all router require protect middleware (user needs to be logged in), so let's use shared middleware
+router.use(protect);
+router.patch(`/change-my-password`, updatePassword);
+router.patch(`/update-me`, updateMe);
+router.delete(`/delete-me`, deleteMe);
+router.get(`/get-me`, getMe, getUser);
 // prettier-ignore
 router.route('/')
-    .get(getAllUsers)
-// .post(createUser);
+    .get(getAllUsers);
+
+// FROM now on only admin can make following requests
+router.use(restrictTo('admin'));
 // prettier-ignore
 router
     .route('/:id')
     .get(getUser)
     .patch(updateUser)
-    .delete(protect, deleteUser);
+    .delete(deleteUser);
 
 module.exports = router;

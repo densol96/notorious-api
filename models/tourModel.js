@@ -41,6 +41,9 @@ const tourSchema = new mongoose.Schema(
             default: 4.5,
             min: [1, `Rating cannot be lower than 1.0!`],
             max: [5, `Rating cannot be higher than 5.0!`],
+            set: function (val) {
+                Math.round(val * 10) / 10;
+            },
         },
         ratingsQuantity: {
             type: Number,
@@ -134,9 +137,14 @@ const tourSchema = new mongoose.Schema(
         },
     }
 );
-
 // Documents created off Tour modell are going to tours collection
 tourSchema.set('collection', 'tours');
+
+// 1 = ascending, -1 = descending
+//
+// tourSchema.index({ price: 1 });
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 // Create a'virtual' field that is not stored directly in DB but derives from the other property that is actually stored
 tourSchema.virtual(`durationWeeks`).get(function () {
@@ -211,8 +219,10 @@ tourSchema.pre(`aggregate`, function (next) {
     //     { $sort: [Object] },
     //     { $limit: 12 },
     // ],
+    if (!'$geoNear' in this.pipeline()[0]) {
+        this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+    }
 
-    this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
     next();
 });
 

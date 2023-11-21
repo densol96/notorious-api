@@ -11,6 +11,8 @@ const {
     getTourStats,
     getMonthlyPlan,
     lowerField,
+    getToursWithin,
+    getDistances,
 } = require(`${__dirname}/../controllers/tourController.js`);
 
 const {
@@ -21,12 +23,6 @@ const {
 const reviewsRouter = require('./reviewRouter.js');
 // This middleware will be applied first to the request matching the .route(`/:id`)
 // router.param('id', validateID);
-
-// prettier-ignore
-router
-    .route(`/`)
-    .get(protect, restrictTo('admin', 'user'), getAllTours)
-    .post(lowerField, postTour);
 
 // prettier-ignore
 router.route(`/top-5`)
@@ -40,11 +36,24 @@ router.route(`/stats`)
 router.route(`/monthly-plan/:year`)
     .get(getMonthlyPlan);
 
+router
+    .route('/tours-within/:distance/center/:latlng/unit/:unit')
+    .get(getToursWithin);
+
+router.route('/distances/:latlng/unit/:unit').get(getDistances);
+
 // prettier-ignore
-router.route(`/:id`)
+router
+    .route(`/`)
+    .get(getAllTours)
+    .post(protect, restrictTo("lead-guide", "admin"),postTour);
+
+// prettier-ignore
+router
+    .route(`/:id`)
     .get(getTourById)
-    .patch(updateTour)
-    .delete(deleteTour);
+    .patch(protect, restrictTo('lead-guide', 'admin'), updateTour)
+    .delete(protect, restrictTo('lead-guide', 'admin'), deleteTour);
 
 // NESTED ROUTE simillar to app.use("url", router)
 router.use('/:id/reviews', reviewsRouter);

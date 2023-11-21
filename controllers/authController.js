@@ -121,15 +121,12 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
         throw new AppError('Please provide email and password', 400);
     }
     // Check if user exists && password is correct
-    const user = await User.findOne({ email: email }).select(
-        '+password emailConfirmed'
-    ); // Cause in the model for password select is false => therefore need to select separately with explicit +
+    const user = await User.findOne({ email: email }).select('+password'); // Cause in the model for password select is false => therefore need to select separately with explicit +
+
     if (!user) {
         throw new AppError(`No user with such email!`, 401);
     }
 
-    console.log('I am here!');
-    console.log(user);
     if (!user.emailConfirmed) {
         throw new AppError(
             'Email has not been confirmed yet! Please check your inbox!',
@@ -149,6 +146,7 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
         const updates = {
             loginAttempts: user.loginAttempts,
         };
+        console.log('Updates:', updates);
         if (user.loginAttempts >= +process.env.WRONG_PASSWORD_LIMIT) {
             updates.tempBan = new Date(
                 Date.now() + +process.env.WRONG_PASSWORD_BAN_MIN * 60 * 1000
@@ -166,6 +164,7 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
     }
 
     // If everything okey, send token to client
+    await User.findOneAndUpdate({ email }, { loginAttempts: 0 });
     createSendToken(user, 201, res);
 });
 
@@ -292,7 +291,7 @@ exports.updatePassword = catchAsyncError(async (req, res, next) => {
     // 1) Get user from the collection
     const user = await User.findOne({ _id: req.user.id }).select('+password');
 
-    if (!user) throw new AppError(`No user with this email found!`, 404);
+    if (!user) throw new AppError(`No user with this id found!`, 404);
     // 2) Check is the old password is correct
     if (!(await user.correctPassword(req.body.oldPassword, user.password)))
         throw new AppError(`Wrong password!`, 400);
