@@ -1,3 +1,4 @@
+const { permittedCrossDomainPolicies } = require('helmet');
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 
@@ -191,13 +192,13 @@ tourSchema.pre(`find`, function (next) {
     next();
 });
 
-// tourSchema.pre(`find`, function (next) {
-//     this.populate({
-//         path: 'guides',
-//         select: '-__v -passwordChangedAt',
-//     });
-//     next();
-// });
+tourSchema.pre(/^find/, function (next) {
+    this.populate({
+        path: 'guides',
+        select: '-__v -passwordChangedAt',
+    });
+    next();
+});
 
 tourSchema.post(`find`, function (docs, next) {
     const time = Date.now() - this.queryStartTime;

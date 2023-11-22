@@ -2,6 +2,7 @@ const path = require('path');
 const usersRouter = require('./router/userRouter.js');
 const toursRouter = require('./router/tourRouter.js');
 const reviewsRouter = require('./router/reviewRouter.js');
+const viewRouter = require('./router/viewRouter.js');
 
 const AppError = require(`./utils/appError.js`);
 const globalErrorHandler = require('./controllers/errorController.js');
@@ -41,8 +42,28 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // SETTING SECURITY HTTP HEADERS
-app.use(helmet());
-
+const scriptSrcUrls = ['https://unpkg.com/', 'https://tile.openstreetmap.org'];
+const styleSrcUrls = [
+    'https://unpkg.com/',
+    'https://tile.openstreetmap.org',
+    'https://fonts.googleapis.com/',
+];
+const connectSrcUrls = ['https://unpkg.com', 'https://tile.openstreetmap.org'];
+const fontSrcUrls = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: [],
+            connectSrc: ["'self'", ...connectSrcUrls],
+            scriptSrc: ["'self'", ...scriptSrcUrls],
+            styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+            workerSrc: ["'self'", 'blob:'],
+            objectSrc: [],
+            imgSrc: ["'self'", 'blob:', 'data:', 'https:'],
+            fontSrc: ["'self'", ...fontSrcUrls],
+        },
+    })
+);
 // BODY PARSER = reading data from body into req.body
 // express.json() returns a middleware callback function that transforms request-content in JSON to JS Object
 app.use(
@@ -87,16 +108,10 @@ app.use((req, res, next) => {
 });
 
 // ROUTES
-app.use('/', (req, res) => {
-    res.status(200).render('base', {
-        tour: 'The Forest Hiker',
-        user: 'Jonas',
-    });
-});
-
 app.use('/api/v1/tours', toursRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/reviews', reviewsRouter);
+app.use('/', viewRouter);
 
 app.all('*', (req, res, next) => {
     const err = new AppError(
