@@ -7,6 +7,9 @@ const {
     getTourPage,
     logInPage,
 } = require('../controllers/viewController');
+const { protect, isLoggedIn } = require('../controllers/authController.js');
+
+router.use(isLoggedIn);
 
 router.get('/', getMainPage);
 router.get('/overview', getOverview);

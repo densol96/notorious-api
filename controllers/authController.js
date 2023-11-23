@@ -146,7 +146,6 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
         const updates = {
             loginAttempts: user.loginAttempts,
         };
-        console.log('Updates:', updates);
         if (user.loginAttempts >= +process.env.WRONG_PASSWORD_LIMIT) {
             updates.tempBan = new Date(
                 Date.now() + +process.env.WRONG_PASSWORD_BAN_MIN * 60 * 1000
@@ -172,9 +171,12 @@ exports.protect = catchAsyncError(async (req, res, next) => {
     // 1) Getting token and check if it's there
 
     let token;
-    if (req.headers?.authorization?.startsWith('Bearer')) {
+    if (req.cookies.jwt) {
+        token = req.cookies.jwt;
+    } else if (req.headers?.authorization?.startsWith('Bearer')) {
         token = req.headers.authorization.split(` `)[1];
     }
+
     if (!token) {
         throw new AppError(
             'You are not logged in! Please log in to get access!',
@@ -201,6 +203,35 @@ exports.protect = catchAsyncError(async (req, res, next) => {
     }
     // Grant access to protected route
     req.user = user;
+    next();
+});
+
+// Only for rendered pages, no errors!
+exports.isLoggedIn = catchAsyncError(async (req, res, next) => {
+    if (req.cookies.jwt) {
+        // 2) Verify token
+        const decoded = await promisify(jwt.verify)(
+            req.cookies.jwt,
+            process.env.JWT_SECRET
+        );
+
+        // 3) Check if user still exists
+        const user = await User.findOne({ _id: decoded.id });
+        console.log(user);
+        if (!user) {
+            return next();
+        }
+
+        // 4) Check if user changed password after token was issued
+        if (user.changedPasswordAfter(decoded.iat)) {
+            return next();
+        }
+
+        // There is a loggen in user!
+        // Eery pug template has access to the 'locals' variables!
+        res.locals.user = user;
+    }
+    // do not do anything = keep the client session unmarked as logged in
     next();
 });
 

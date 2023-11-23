@@ -5,7 +5,6 @@ exports.getMainPage = (req, res) => {
     console.log(`Hitting the main page!`);
     res.status(200).render('base', {
         tour: 'The Forest Hiker',
-        user: 'Jonas',
         title: 'Home Page',
     });
 };

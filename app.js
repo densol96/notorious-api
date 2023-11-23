@@ -8,13 +8,16 @@ const AppError = require(`./utils/appError.js`);
 const globalErrorHandler = require('./controllers/errorController.js');
 
 const morgan = require('morgan');
-const express = require('express');
-const app = express();
+
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require(`express-mongo-sanitize`);
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
+
+const express = require('express');
+const app = express();
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
@@ -42,7 +45,11 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // SETTING SECURITY HTTP HEADERS
-const scriptSrcUrls = ['https://unpkg.com/', 'https://tile.openstreetmap.org'];
+const scriptSrcUrls = [
+    'https://unpkg.com/',
+    'https://tile.openstreetmap.org',
+    'https://cdn.jsdelivr.net/',
+];
 const styleSrcUrls = [
     'https://unpkg.com/',
     'https://tile.openstreetmap.org',
@@ -71,6 +78,9 @@ app.use(
         limit: '10kb',
     })
 );
+
+// Parse cookies to req.cookies
+app.use(cookieParser());
 
 // PREVENT PARAMETER POLLUTION
 app.use(
@@ -103,7 +113,10 @@ app.use(express.static(`${__dirname}/public`));
 
 // TEST middleware
 app.use((req, res, next) => {
+    console.log('=== Request additional data.. ===');
     req.timeOfRequest = new Date().toISOString();
+    console.log(req.cookies);
+
     next();
 });
 
