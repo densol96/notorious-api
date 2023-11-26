@@ -1,5 +1,5 @@
-// import '@babel/polyfill';
-import { logUserIn } from './login.js';
+import '@babel/polyfill';
+import { logUserIn, logUserOut } from './login.js';
 import { displayMap } from './mapbox.js';
 
 // LOGIN FORM
@@ -23,5 +23,11 @@ if (locationString) {
     displayMap(locations);
 }
 
+// LOG USER OUT
+const logOutBtn = document.querySelector('.nav__el--logout');
+
+if (logOutBtn) {
+    logOutBtn.addEventListener('click', logUserOut);
+}
+
 console.log('hello');
-console.log(loginForm);

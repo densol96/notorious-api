@@ -7,7 +7,12 @@ const {
     getTourPage,
     logInPage,
 } = require('../controllers/viewController');
-const { protect, isLoggedIn } = require('../controllers/authController.js');
+
+const {
+    protect,
+    isLoggedIn,
+    logOut,
+} = require('../controllers/authController.js');
 
 router.use(isLoggedIn);
 

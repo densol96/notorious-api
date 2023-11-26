@@ -1,5 +1,6 @@
 const Tour = require('../models/tourModel.js');
 const catchAssyncErr = require('../utils/catchAssyncErr');
+const AppError = require('../utils/appError.js');
 
 exports.getMainPage = (req, res) => {
     console.log(`Hitting the main page!`);
@@ -23,6 +24,14 @@ exports.getTourPage = catchAssyncErr(async (req, res, next) => {
         path: 'reviews',
         fields: 'review rating user',
     });
+
+    if (!tour) {
+        throw new AppError(
+            `There is no such tour with the slug of: ${req.params.slug}`,
+            404
+        );
+    }
+
     res.status(200).render('tour', {
         tour,
         title: tour.name,

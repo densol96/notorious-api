@@ -8,7 +8,7 @@ header.header
         a.nav__el(href='/login') Log in
         a.nav__el.nav__el--cta Sign up
     - else 
-        a.nav__el.nav__el--logout(href='/login') Log out
+        a.nav__el.nav__el--logout(href='#') Log out
         a.nav__el(href='#')
-            img.nav__user-img(src=`/img/users/${user.photo}`, alt='Your avatar!')
+            img.nav__user-img(src=`/img/users/${user.photo}`, alt='Your user avatar!')
             span= user.name.split(' ')[0]

@@ -167,6 +167,16 @@ exports.logIn = catchAsyncError(async (req, res, next) => {
     createSendToken(user, 201, res);
 });
 
+exports.logout = (req, res) => {
+    res.cookie('jwt', 'loggedout', {
+        expires: new Date(Date.now() + 1 * 1000),
+        httpOnly: true,
+    });
+    res.status(200).json({
+        status: 'success',
+    });
+};
+
 exports.protect = catchAsyncError(async (req, res, next) => {
     // 1) Getting token and check if it's there
 
@@ -210,14 +220,19 @@ exports.protect = catchAsyncError(async (req, res, next) => {
 exports.isLoggedIn = catchAsyncError(async (req, res, next) => {
     if (req.cookies.jwt) {
         // 2) Verify token
-        const decoded = await promisify(jwt.verify)(
-            req.cookies.jwt,
-            process.env.JWT_SECRET
-        );
+        let decoded;
+        try {
+            decoded = await promisify(jwt.verify)(
+                req.cookies.jwt,
+                process.env.JWT_SECRET
+            );
+        } catch (err) {
+            return next();
+        }
 
         // 3) Check if user still exists
         const user = await User.findOne({ _id: decoded.id });
-        console.log(user);
+
         if (!user) {
             return next();
         }

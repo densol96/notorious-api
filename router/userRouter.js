@@ -19,6 +19,7 @@ const {
     resetPassword,
     updatePassword,
     restrictTo,
+    logout,
 } = require('./../controllers/authController');
 
 const router = express.Router();
@@ -28,6 +29,7 @@ router.get('/email-confirmation/:token', confirmEmail);
 router.post(`/login`, logIn);
 router.post(`/forgot-password`, forgotPassword);
 router.patch(`/reset-password/:token`, resetPassword);
+router.get('/logout', logout);
 
 // From this point on, all router require protect middleware (user needs to be logged in), so let's use shared middleware
 router.use(protect);

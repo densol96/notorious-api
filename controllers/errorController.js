@@ -32,32 +32,58 @@ const handleJWTError = (err) =>
 const handleJWTExpired = (err) =>
     new AppError(`Your log in session has expired! Please log in again!`, 401);
 
-const sendErrDev = (err, res) => {
-    res.status(err.statusCode).json({
-        status: err.status,
-        error: err,
-        message: err.message,
-        stack: err.stack,
-    });
-};
-
-const sendErrProd = (err, res) => {
-    // Operational (trusted) error: send message to the client
-    if (err.isOperational) {
+const sendErrDev = (err, req, res) => {
+    // API
+    if (req.originalUrl.startsWith('/api')) {
         res.status(err.statusCode).json({
             status: err.status,
+            error: err,
             message: err.message,
+            stack: err.stack,
         });
     }
-    // Programming or other unknown error: don;t lear error details to the user
+    // RENDERED WEBSITE
     else {
-        // 1. Log the error
-        console.error(`ERROR 💥`, err);
-        // 2. Send the generic message
-        res.status(500).json({
-            status: 'error',
-            message: 'Something went very wrong!',
+        res.status(err.statusCode).render('error', {
+            title: 'Something went wrong!',
+            msg: err.message,
         });
+    }
+};
+
+const sendErrProd = (err, req, res) => {
+    // API
+    if (req.originalUrl.startsWith('/api')) {
+        if (err.isOperational) {
+            res.status(err.statusCode).json({
+                status: err.status,
+                message: err.message,
+            });
+        } else {
+            // 1. Log the error
+            console.error(`ERROR HIDDEN FROM THE USER IN PROD 💥`, err);
+            // 2. Send the generic message
+            res.status(500).json({
+                status: 'error',
+                message: 'Something went very wrong!',
+            });
+        }
+    }
+    // REENDERED WEBSITE
+    else {
+        if (err.isOperational) {
+            res.status(err.statusCode).render('error', {
+                title: 'Something went wrong!',
+                msg: err.message,
+            });
+        } else {
+            console.error(`ERROR HIDDEN FROM THE USER IN PROD 💥`, err);
+            res.status(500).render('error', {
+                title: 'Something went wrong!',
+                status: 'error',
+                msg: 'Something went very wrong!',
+            });
+        }
     }
 };
 
@@ -65,7 +91,7 @@ module.exports = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
     if (process.env.NODE_ENV.trim() === 'development') {
-        sendErrDev(err, res);
+        sendErrDev(err, req, res);
     } else if (process.env.NODE_ENV.trim() === 'production') {
         let error = err;
         if (err.name === 'CastError') error = handleCastErrorDB(err);
@@ -75,6 +101,6 @@ module.exports = (err, req, res, next) => {
         else if (err.name === 'JsonWebTokenError') error = handleJWTError(err);
         else if (err.name === `TokenExpiredError`)
             error = handleJWTExpired(err);
-        sendErrProd(error, res);
+        sendErrProd(error, req, res);
     }
 };
