@@ -83,6 +83,9 @@ app.use(
     })
 );
 
+// For forms --> then will have acces to for fields in req.body
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
 // Parse cookies to req.cookies
 app.use(cookieParser());
 

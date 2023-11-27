@@ -6,6 +6,9 @@ const {
     getOverview,
     getTourPage,
     logInPage,
+    getMe,
+    notLoggedInError,
+    updateUserData,
 } = require('../controllers/viewController');
 
 const {
@@ -14,11 +17,11 @@ const {
     logOut,
 } = require('../controllers/authController.js');
 
-router.use(isLoggedIn);
-
-router.get('/', getMainPage);
-router.get('/overview', getOverview);
-router.get('/tours/:slug', getTourPage);
-router.get('/login', logInPage);
+router.get('/', isLoggedIn, getMainPage);
+router.get('/overview', isLoggedIn, getOverview);
+router.get('/tours/:slug', isLoggedIn, getTourPage);
+router.get('/login', isLoggedIn, logInPage);
+router.get('/me', protect, getMe);
+router.post('/submit-user-data', protect, updateUserData);
 
 module.exports = router;

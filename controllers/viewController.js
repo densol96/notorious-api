@@ -39,7 +39,49 @@ exports.getTourPage = catchAssyncErr(async (req, res, next) => {
 });
 
 exports.logInPage = catchAssyncErr(async (req, res, next) => {
+    if (res.locals.user) {
+        res.status(403).render('error', {
+            title: 'Access denied!',
+            msg: 'You are already logged in!',
+        });
+    }
     res.status(201).render('logInPage', {
         title: 'Log into your account',
+    });
+});
+
+exports.getMe = catchAssyncErr(async (req, res, next) => {
+    res.status(201).render('account', {
+        title: 'Edit your profile',
+    });
+});
+
+// exports.notLoggedInError = (req, res, next) => {
+//     if (!res.locals.user) {
+//         res.status(403).render('error', {
+//             title: 'Access denied!',
+//             msg: 'Only logged in users have access to this page!',
+//         });
+//     }
+//     next();
+// };
+
+// THIS WOULD WORK WITH TRADITIONAL FORM
+exports.updateUserData = catchAssyncErr(async (req, res, next) => {
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            name: req.body.name,
+            email: req.body.email,
+        },
+        {
+            new: true,
+            runValidators: true,
+        }
+    );
+
+    res.status(200).render('account', {
+        title: 'Your account',
+        user: updatedUser,
     });
 });

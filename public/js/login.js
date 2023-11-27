@@ -28,9 +28,11 @@ export const logUserOut = async () => {
             method: 'GET',
             url: 'http://127.0.0.1:3000/api/v1/users/logout',
         });
+
         if ((result.data.status = 'success')) {
             // will reload the page from the server, not the browser cash that might store user menu from before
-            location.reload(true);
+            // location.reload(true);
+            location.assign('/');
         }
     } catch (err) {
         showAlert('error', 'Error logging out ');

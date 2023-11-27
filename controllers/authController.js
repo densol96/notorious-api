@@ -179,7 +179,6 @@ exports.logout = (req, res) => {
 
 exports.protect = catchAsyncError(async (req, res, next) => {
     // 1) Getting token and check if it's there
-
     let token;
     if (req.cookies.jwt) {
         token = req.cookies.jwt;
@@ -213,6 +212,7 @@ exports.protect = catchAsyncError(async (req, res, next) => {
     }
     // Grant access to protected route
     req.user = user;
+    res.locals.user = user;
     next();
 });
 
