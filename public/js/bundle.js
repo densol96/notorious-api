@@ -12303,12 +12303,11 @@ var formUserData = document.querySelector('.form-user-data');
 if (formUserData) {
   formUserData.addEventListener('submit', function (e) {
     e.preventDefault();
-    var name = formUserData.querySelector('#name').value;
-    var email = formUserData.querySelector('#email').value;
-    (0, _updateSettings.updateAccount)('profile', {
-      name: name,
-      email: email
-    });
+    var form = new FormData();
+    form.append('name', formUserData.querySelector('#name').value);
+    form.append('email', formUserData.querySelector('#email').value);
+    form.append('photo', formUserData.querySelector('#photo').files[0]);
+    (0, _updateSettings.updateAccount)('profile', form);
   });
 }
 
@@ -12374,7 +12373,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "5791" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "3608" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];

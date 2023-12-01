@@ -27,6 +27,7 @@ exports.deleteDocument = (Model) => {
 
 exports.updateDocument = (Model) => {
     return catchAsyncError(async (req, res) => {
+        console.log('💥💥💥💥💥', req.body);
         const updatedDocument = await Model.findOneAndUpdate(
             { _id: req.params.id },
             req.body,

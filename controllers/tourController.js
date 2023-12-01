@@ -5,6 +5,9 @@ const catchAsyncError = require(`../utils/catchAssyncErr`);
 const AppError = require('../utils/appError');
 const handlerFactory = require('./handlerFactory.js');
 
+const sharp = require('sharp');
+const multer = require('multer');
+
 // exports.postTour = catchAsyncError(async (req, res) => {
 //     const newTour = await Tour.create(req.body);
 //     res.status(200).json({
@@ -293,3 +296,61 @@ exports.getDistances = catchAsyncError(async (req, res, next) => {
         },
     });
 });
+
+const multerStorage = multer.memoryStorage();
+const multerFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image')) {
+        cb(null, true);
+    } else {
+        cb(
+            new AppError('Not an image! Please upload an image only!', 400),
+            false
+        );
+    }
+};
+
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: multerFilter,
+});
+
+// exports.uploadTourPhotos = upload.array('images', 5); req.files unlike in .single() which produces req.file
+exports.uploadTourPhotos = upload.fields([
+    { name: 'imageCover', maxCount: 1 },
+    { name: 'images', maxCount: 3 },
+]);
+
+exports.resizeTourImages = async (req, res, next) => {
+    console.log(req.files);
+    if (req.files.imageCover && req.files.images) {
+        // IMAGE COVER
+        req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
+        await sharp(req.files.imageCover[0].buffer)
+            .resize(2000, 1333)
+            .toFormat('jpeg')
+            .jpeg({ quality: 90 })
+            .toFile(`public/img/tours/${req.body.imageCover}`);
+
+        // IMAGES
+        req.body.images = [];
+
+        const promises = req.files.images.map(async (image, i) => {
+            const filename = `tour-${req.params.id}-${Date.now()}-${
+                i + 1
+            }.jpeg`;
+
+            await sharp(image.buffer)
+                .resize(2000, 1333)
+                .toFormat('jpeg')
+                .jpeg({ quality: 90 })
+                .toFile(`public/img/tours/${filename}`);
+
+            req.body.images.push(filename);
+        });
+        console.log('💥💥💥 PROMISES: ', promises);
+        await Promise.all(promises);
+        console.log('💥💥💥 PROMISES: ', promises);
+    }
+
+    next();
+};

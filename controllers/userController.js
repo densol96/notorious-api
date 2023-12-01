@@ -3,6 +3,52 @@ const catchAsyncError = require(`./../utils/catchAssyncErr`);
 const AppError = require('../utils/appError');
 const handlerFactory = require('./handlerFactory.js');
 
+const sharp = require('sharp');
+const multer = require('multer');
+
+// const multerStorage = multer.diskStorage({
+//     // request, req.file, callback (sort of like next in express)
+//     destination: (req, file, cb) => {
+//         cb(null, 'public/img/users');
+//     },
+//     filename: (req, file, cb) => {
+//         // user-id-timestamp.jpeg  --> this will guarantee there are not dupliocate names
+//         const extension = file.mimetype.split('/')[1];
+//         cb(null, `user-${req.user.id}-${Date.now()}.${extension}`);
+//     },
+// });
+const multerStorage = multer.memoryStorage();
+
+const multerFilter = (req, file, cb) => {
+    if (file.mimetype.startsWith('image')) {
+        cb(null, true);
+    } else {
+        cb(
+            new AppError('Not an image! Please upload an image only!', 400),
+            false
+        );
+    }
+};
+
+const upload = multer({
+    storage: multerStorage,
+    fileFilter: multerFilter,
+});
+
+exports.uploadUserPhotoMW = upload.single('photo');
+
+exports.resizeImage = async (req, res, next) => {
+    if (req.file) {
+        req.file.filename = `user-${req.user._id.toString()}-${Date.now()}.jpeg`;
+        await sharp(req.file.buffer)
+            .resize(500, 500)
+            .toFormat('jpeg')
+            .jpeg({ quality: 90 })
+            .toFile(`public/img/users/${req.file.filename}`);
+    }
+    next();
+};
+
 const filterObj = (obj, ...allowedFields) => {
     const filtered = {};
     Object.keys(obj).forEach((key) => {
@@ -36,6 +82,11 @@ exports.updateMe = catchAsyncError(async (req, res, next) => {
     }
     // 2) Filtered out unwanted fields f.e. role("admin")
     const filteredUpdates = filterObj(req.body, 'name', 'email');
+
+    // check if the avatar was updated!
+    if (req.file) {
+        filteredUpdates.photo = req.file.filename;
+    }
 
     //3) Update user document
     const updatedUser = await User.findOneAndUpdate(

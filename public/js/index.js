@@ -36,12 +36,11 @@ const formUserData = document.querySelector('.form-user-data');
 if (formUserData) {
     formUserData.addEventListener('submit', function (e) {
         e.preventDefault();
-        const name = formUserData.querySelector('#name').value;
-        const email = formUserData.querySelector('#email').value;
-        updateAccount('profile', {
-            name,
-            email,
-        });
+        const form = new FormData();
+        form.append('name', formUserData.querySelector('#name').value);
+        form.append('email', formUserData.querySelector('#email').value);
+        form.append('photo', formUserData.querySelector('#photo').files[0]);
+        updateAccount('profile', form);
     });
 }
 

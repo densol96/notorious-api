@@ -49,10 +49,12 @@ const sendErrDev = (err, req, res) => {
             msg: err.message,
         });
     }
+    console.error(`💥💥💥 ERROR IN DEV MODE `, err);
 };
 
 const sendErrProd = (err, req, res) => {
     // API
+    // Send the generic message
     if (req.originalUrl.startsWith('/api')) {
         if (err.isOperational) {
             res.status(err.statusCode).json({
@@ -60,9 +62,6 @@ const sendErrProd = (err, req, res) => {
                 message: err.message,
             });
         } else {
-            // 1. Log the error
-            console.error(`ERROR HIDDEN FROM THE USER IN PROD 💥`, err);
-            // 2. Send the generic message
             res.status(500).json({
                 status: 'error',
                 message: 'Something went very wrong!',
@@ -77,7 +76,6 @@ const sendErrProd = (err, req, res) => {
                 msg: err.message,
             });
         } else {
-            console.error(`ERROR HIDDEN FROM THE USER IN PROD 💥`, err);
             res.status(500).render('error', {
                 title: 'Something went wrong!',
                 status: 'error',
@@ -85,6 +83,7 @@ const sendErrProd = (err, req, res) => {
             });
         }
     }
+    console.error(`💥💥💥 ERROR IN PROD ==> `, err);
 };
 
 module.exports = (err, req, res, next) => {

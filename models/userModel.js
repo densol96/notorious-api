@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema({
     photo: {
         type: String,
         trim: true,
+        default: 'default.jpg',
     },
     password: {
         type: String,
@@ -107,6 +108,8 @@ userSchema.methods.correctPassword = async function (
     candidatePassword,
     userPassword
 ) {
+    console.log(candidatePassword);
+    console.log(userPassword);
     return await bcrypt.compare(candidatePassword, userPassword);
 };
 

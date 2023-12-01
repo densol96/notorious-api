@@ -1,4 +1,5 @@
 const express = require('express');
+
 const {
     getAllUsers,
     createUser,
@@ -8,6 +9,8 @@ const {
     updateMe,
     deleteMe,
     getMe,
+    uploadUserPhotoMW,
+    resizeImage,
 } = require('../controllers/userController');
 
 const {
@@ -34,7 +37,8 @@ router.get('/logout', logout);
 // From this point on, all router require protect middleware (user needs to be logged in), so let's use shared middleware
 router.use(protect);
 router.patch(`/change-my-password`, updatePassword);
-router.patch(`/update-me`, updateMe);
+// photo refers to the field
+router.patch(`/update-me`, uploadUserPhotoMW, resizeImage, updateMe);
 router.delete(`/delete-me`, deleteMe);
 router.get(`/get-me`, getMe, getUser);
 // prettier-ignore

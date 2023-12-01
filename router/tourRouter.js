@@ -13,6 +13,8 @@ const {
     lowerField,
     getToursWithin,
     getDistances,
+    uploadTourPhotos,
+    resizeTourImages,
 } = require(`${__dirname}/../controllers/tourController.js`);
 
 const {
@@ -52,7 +54,7 @@ router
 router
     .route(`/:id`)
     .get(getTourById)
-    .patch(protect, restrictTo('lead-guide', 'admin'), updateTour)
+    .patch(protect, restrictTo('lead-guide', 'admin'), uploadTourPhotos, resizeTourImages,  updateTour)
     .delete(protect, restrictTo('lead-guide', 'admin'), deleteTour);
 
 // NESTED ROUTE simillar to app.use("url", router)
